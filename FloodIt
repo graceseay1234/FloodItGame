@@ -1,0 +1,787 @@
+\\ Addison Seay
+
+import java.util.ArrayList;
+import tester.*;
+import javalib.impworld.*;
+import java.awt.Color;
+import javalib.worldimages.*;
+
+
+// ｡ﾟ•┈୨♡୧┈•ﾟ｡  Flood It    ｡ﾟ•┈୨♡୧┈•ﾟ｡
+class FloodItWorld extends World {
+  int boardSize = 20;
+  // ♡ num of colors in game; cannot exceed this num
+  int colorsUsed = 8;
+  // ♡ all cells
+  ArrayList<Cell> board;
+  static final int testBoardSize = 6;
+  int limit;
+  // ♡ clicks starts at 0
+  int clicks = 0;
+  // ♡ time starts at 0
+  int time = 0; 
+
+  FloodItWorld(int boardsz, int colors) {
+    boardSize = boardsz;
+    colorsUsed = colors;
+    makeCells(boardSize);
+    if (boardSize > 12) {
+      limit = boardSize + colorsUsed + 20;
+    }
+    else if (boardSize < 4) {
+      limit = boardSize + colorsUsed - 2;
+    }
+    else {
+      limit = boardSize + colorsUsed - 1;
+    }
+  }
+
+
+  //･:*:･ﾟ★,｡･:*:･ﾟ☆ for testing･:*:･ﾟ★,｡･:*:･ﾟ☆
+
+  FloodItWorld() {
+    boardSize = 2;
+    colorsUsed = 3;
+    limit = 3;
+  }
+
+  //･:*:･ﾟ★,｡･:*:･ﾟ☆:*:･ﾟ★,｡･:*:･ﾟ☆:*:･ﾟ★,｡･:*:･ﾟ☆
+
+  // generates random colored cells; 
+  // the amount depends on the size of the board ♡
+  void makeCells(int boardsz) {
+    board = new ArrayList<Cell>();
+    for (int i = 0; i < boardsz; i++) {
+      for (int j = 0; j < boardsz; j++) {
+        if (i == 0 && j == 0) {
+          board.add(new Cell(0, 0, true, this.colorsUsed));
+        }
+        else {
+          board.add(new Cell(i, j, false, this.colorsUsed)); 
+        }
+      }
+    }
+
+    // ･:*:･ﾟ★,｡･:  T, B, L, R modification
+
+    for (int i = 0; i < board.size(); i++) {
+      Cell modifyThis = board.get(i);
+      if (board.get(i).x == 0) { 
+        modifyThis.left = null;
+      }
+      // ♡ left
+      else {
+        modifyThis.left = board.get(i - boardsz);
+      }
+      if (board.get(i).x == boardsz - 1) {
+        modifyThis.right = null;
+      }
+      // ♡ right
+      else {
+        modifyThis.right = board.get(i + boardsz);
+      }
+      if (board.get(i).y == 0) {
+        modifyThis.top = null;
+      } 
+      // ♡ top
+      else {
+        modifyThis.top = board.get(i - 1);
+      }
+      if (board.get(i).y == boardsz - 1) {
+        modifyThis.bottom = null;
+      } 
+      // ♡ bottom
+      else {
+        modifyThis.bottom = board.get(i + 1);
+      }
+    }
+  }
+
+
+  //  ･:*:･ﾟ★,｡･: determines which cell in the board
+  //  ･:*:･ﾟ★,｡･: was clicked on and returns that cell.
+  public Cell clickedCell(Posn pos) {
+    Cell cell = null;
+    for (Cell c: board) {
+      if ((c.x <= ((pos.x - 71) / 20)) && (((pos.x - 71) / 20) <= c.x )
+          && (c.y <= ((pos.y - 71) / 20)) && (((pos.y - 71) / 20) <= c.y )) {
+        cell = c;
+      }
+    }
+    return cell;
+  }
+
+  //  ･:*:･ﾟ★,｡･: changes  first cell to the color 
+  //  ･:*:･ﾟ★,｡･:of the cell that has been clicked
+  public void updateOnClick(Cell cell) {
+    if (cell != null) {
+      Cell changeState = board.get(0);
+      changeState.color = cell.color;
+      board.set(0, changeState);
+    }
+  }
+
+  //  ･:*:･ﾟ★,｡･: alters world state depending
+  // ･:*:･ﾟ★,｡･: on which cell is clicked
+
+  public void onMouseClick(Posn pos) {
+    if ((pos.x < 70 || pos.x > (boardSize * 20 + 70))
+        || (pos.y < 70 || pos.y > (boardSize * 20 + 70))) {
+    } else {
+      this.updateOnClick(this.clickedCell(pos)); 
+      clicks++;
+    }
+  }
+
+
+  //  ･:*:･ﾟ★,｡･: makes the world scene 
+  //  ･:*:･ﾟ★,｡･: that is to be displayed to the player.
+  public WorldScene makeScene() {
+    // size and background 
+    WorldScene finalScene = new WorldScene(1200, 800);
+
+    //  ✧･ﾟ: *✧･ﾟ RULES
+    finalScene.placeImageXY(new TextImage("Rules:", 20,
+        FontStyle.BOLD, Color.PINK), 800, 255);
+    finalScene.placeImageXY(new TextImage("Starting Point: Top-Left", 15,
+        FontStyle.REGULAR, Color.PINK), 800, 300);
+    finalScene.placeImageXY(new TextImage("1.) Change the color of the cell by clicking", 15,
+        FontStyle.REGULAR, Color.PINK), 800, 350);
+    finalScene.placeImageXY(new TextImage("on one of it's neighbors", 15,
+        FontStyle.REGULAR, Color.PINK), 800, 365);
+    finalScene.placeImageXY(new TextImage("2.) Try to fill the board with one color", 15,
+        FontStyle.REGULAR, Color.PINK), 800, 405);
+    finalScene.placeImageXY(new TextImage("within the given amount of moves", 15,
+        FontStyle.ITALIC, Color.PINK), 800, 420);
+
+    //  ✧･ﾟ: *✧･ﾟ WATER
+    finalScene.placeImageXY(new FromFileImage("output-onlinepngtools-3.png"), 820, 150);
+    //  ✧･ﾟ: *✧･ﾟ "FLOOD IT" TITLE
+    finalScene.placeImageXY(new FromFileImage("d8ca33e33c53b884f1509626a6393bb7.png"), 820, 150);
+    //  ✧･ﾟ: *✧･ﾟ MOVES MADE
+    finalScene.placeImageXY((new TextImage(Integer.toString(clicks, 200) 
+        + " /" + Integer.toString(limit, 200) , Color.PINK)), 
+        boardSize * 13, boardSize * 25);
+    //  ✧･ﾟ: *✧･ﾟ TIME
+    finalScene.placeImageXY(new TextImage("Time: " + time / 10 + "s", 20,
+        FontStyle.REGULAR, Color.PINK), boardSize * 13, boardSize * 27);
+    //  ✧･ﾟ: *✧･ﾟ if player loses, overlay "YOU LOSE" on sand png
+    if (clicks >= limit
+        && (!allFlooded())) {
+      finalScene.placeImageXY(new FromFileImage("sand_PNG24.png"),  
+          500, 600);
+      finalScene.placeImageXY(new FromFileImage("6ad7085ce08a743b1d74baf6833de11a.png"),  
+          820, 600);
+    }
+    //  ✧･ﾟ: *✧･ﾟ if player wins, overlay "YOU WIN"
+    else if (clicks <= limit
+        && allFlooded()) {
+      finalScene.placeImageXY(new FromFileImage("7af9c61b4cc3ab1829a91ef060dea022.png"),  
+          820, 600);
+    }
+    for (Cell c: board) {
+      finalScene.placeImageXY(c.image(), 80 + 20 * c.x, 80 + 20 * c.y);
+    }
+    return finalScene;
+  }
+
+  //  ⋆⑅˚₊changes all the flooded cells in the board to have the color
+  // of the first cell in the board which already has been changed to have 
+  // the color of the cell that was clicked on.⋆⑅˚₊
+  public void updateWorldState() {
+    // ♡ progress of flow 
+    Cell floodProgress = this.board.get(0);
+    // ♡ direction of flow
+    String floodingTo = floodProgress.color;
+    for (int i = 0; i < board.size(); i++) {
+      Cell cell = board.get(i);
+      if (cell.flooded) {
+        // ♡ sets color
+        cell.setColor(floodingTo);
+        cell.update(floodingTo);
+      }
+      //produces
+      makeScene();
+    }
+  }
+
+  // ⋆⑅˚₊ checks if all the cells in the board are flooded ⋆⑅˚₊
+  boolean allFlooded() {
+    boolean result = true;
+    for (Cell cell: board) {
+      result = result && cell.flooded;
+    }
+    return result;
+  }
+
+  // ⋆⑅˚₊ changes the state of the world at each tick ⋆⑅˚₊
+  public void onTick() {
+    time++;
+    updateWorldState();
+  }
+
+  // ⋆⑅˚₊ game is reset when player presses r 
+  // scrambles order and colors ⋆⑅˚₊
+  public void onKeyEvent(String key) {
+    if (key.equals("r")) {
+      this.board = new ArrayList<Cell>();
+      //  ♡ starts player back over w/ 0 clicks
+      clicks = 0;
+      makeCells(boardSize);
+    }
+  }
+
+  // ⋆⑅˚₊ alters what is given 
+  // to bigBang depending on what the user inputs ⋆⑅˚₊
+  public void startGame(int gridSize, int numberOfColors) {
+    // ♡ cannot exceed 8
+    if (numberOfColors > 8) {
+      throw new IllegalArgumentException("✧You may not use more than 8 colors!✧");
+    }
+    boardSize = gridSize;
+    colorsUsed = numberOfColors;
+    FloodItWorld world = new FloodItWorld(gridSize, numberOfColors);
+    world.bigBang(1200, 800, 0.1);
+  }
+}
+
+//  ｡ﾟ•┈୨♡୧┈•ﾟ｡Represents a single square of the game area｡ﾟ•┈୨♡୧┈•ﾟ｡
+class Cell {
+  // ♡ In logical coordinates, with the origin at the top-left corner of the
+  // screen
+  int x;
+  int y;
+  String color;
+  boolean flooded;
+  Posn posn;
+  // ♡ the four adjacent cells to this one
+  Cell left;
+  Cell right;
+  Cell top;
+  Cell bottom;
+  // ♡ The list of colors
+  ArrayList<String> colors;
+
+  Cell(int x, int y, boolean flooded, int colorNum) {
+    this.x = x; 
+    this.y = y;
+    initColors();
+    // ♡ randomizes color based on #
+    int random = (int) (Math.random() * colorNum);
+    // ♡  random color
+    this.color = colors.get(random);
+    this.flooded = flooded;
+    // ♡  x and y
+    this.posn = new Posn(this.x, this.y);
+  }
+
+  // ｡ﾟ•┈୨♡୧┈•ﾟconstructor for testing｡ﾟ•┈୨♡୧┈•ﾟ
+  Cell(int x, int y, String color, boolean flooded,
+      Cell left, Cell top, Cell right, Cell bottom) {
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.flooded = flooded;
+    this.posn = new Posn(this.x, this.y);
+    this.left = left;
+    this.top = top; 
+    this.bottom = bottom;
+    this.right = right;
+  }
+
+  // -ˏ͛⑅　‧̥̥͙‧̥̥ ̥ ̮ ̥ ⊹ ‧̫‧ ⊹ ̥ ̮ ̥ ‧̥̥‧̥̥͙　⑅ˏ͛- -ˏ͛⑅　‧̥̥͙‧̥̥ ̥ ̮ ̥ ⊹ ‧̫‧ ⊹ ̥ ̮ ̥ ‧̥̥‧̥̥͙　⑅ˏ͛- 
+
+  // generates cell on background
+  //  pastel colors
+  WorldImage image() {
+    if (this.color.equals("light purple")) {
+      return new RectangleImage(20, 20, OutlineMode.SOLID, new Color(243, 243, 252)); 
+    }
+    else if (this.color.equals("light blue")) { 
+      return new RectangleImage(20, 20, OutlineMode.SOLID, new Color(215, 237, 250));
+    }
+    else if (this.color.equals("light green")) {   
+      return new RectangleImage(20, 20, OutlineMode.SOLID, new Color(217, 244, 224));  
+    }
+    else if (this.color.equals("light red")) { 
+      return new RectangleImage(20, 20, OutlineMode.SOLID, new Color(232, 208, 215));
+    }
+    else if (this.color.equals("purple")) { 
+      return new RectangleImage(20, 20, OutlineMode.SOLID, new Color(233, 225, 249)); 
+    }
+    else if (this.color.equals("light yellow")) { 
+      return new RectangleImage(20, 20, OutlineMode.SOLID, new Color(250, 244, 237)); 
+    }
+    else if (this.color.equals("light orange")) {
+      return new RectangleImage(20, 20, OutlineMode.SOLID, new Color(246, 223, 218)); 
+    }
+    else { //light greenish blue
+      return new RectangleImage(20, 20, OutlineMode.SOLID, new Color(230, 252, 252)); 
+    }
+  }
+
+
+  // pastel colors ✧･ﾟ: *✧･ﾟ:
+
+  // new Color(215, 237, 250)
+  // new Color(243, 243, 252)
+  // new Color(217, 244, 224)
+  // new Color(233, 225, 249)
+  // new Color(250, 244, 237)
+  // new Color(246, 223, 218)
+  // new Color(230, 252, 252)
+  // new Color(232, 208, 215)
+
+
+  // pink colors ✧･ﾟ: *✧･ﾟ:
+
+  // new Color(255,192,203)
+  // new Color(255,228,225)
+  // new Color(255,182,193)
+  // new Color(255,105,180)
+  // new Color(219,112,147)
+  // new Color(255,20,147)
+  // new Color(255,228,225)
+  // new Color(253,221,230)
+
+  // ⋆⑅˚₊ change states of colors to switch to pink pastels ⋆⑅˚₊
+
+  // alters color of this cell to the input string
+  void setColor(String color) {
+    this.color = color;
+  }
+
+  // ⋆⑅˚₊ modifies the colors list to include the allowed colors.⋆⑅˚₊
+  void initColors() {
+    colors = new ArrayList<String>();
+    colors.add("light blue");
+    colors.add("light red");
+    colors.add("light orange");
+    colors.add("light purple");
+    colors.add("light green");
+    colors.add("purple");
+    colors.add("light yellow");
+    colors.add("bluish green");
+  }
+
+  // alters isFlooded value of cells that have not yet
+  // been flooded; makes them the color that is
+  // flooding ⋆¸*ೃ☼
+  void update(String rbg) {
+    //left˚₊✩‧₊
+    if (this.left != null
+        && !this.left.flooded
+        && this.left.color.equals(rbg)) {
+      this.left.flooded = true;
+    }
+    //right˚₊✩‧₊
+    if (this.right != null
+        && !this.right.flooded
+        && this.right.color.equals(rbg)) {
+      this.right.flooded = true;
+    }
+    //top˚₊✩‧₊
+    if (this.top != null
+        && !this.top.flooded 
+        && this.top.color.equals(rbg)) {
+      this.top.flooded = true;
+    }
+    //bottom˚₊✩‧₊
+    if (this.bottom != null
+        && !this.bottom.flooded 
+        && this.bottom.color.equals(rbg)) {
+      this.bottom.flooded = true;
+    }
+  }
+}
+
+
+// represents examples of worlds, cells and tests.
+class ExamplesFloodIt {
+  // ✩‧₊ cells ✩‧₊
+  Cell lightBlue;
+  Cell lightPurple;
+  Cell lightGreen;
+  Cell lightYellow;
+  Cell bluishGreen;
+  Cell Purple;
+  Cell lightOrange;
+  Cell lightRed;
+  // ✩‧₊ cell colors (list) ✩‧₊
+  ArrayList<String> listofColors;
+  // ✩‧₊ cells for testing (list) ✩‧₊
+  ArrayList<Cell> testBoard;
+  // ✩‧₊ floodit world ex ✩‧₊
+  FloodItWorld flooditWorld;
+  FloodItWorld floodItWorld2;
+  // ✩‧₊cells (list)✩‧₊
+  ArrayList<Cell> exBoard;
+
+  //initializing
+  void initWorld() {
+
+    // valid colors ✧˖*°࿐
+
+    listofColors = new ArrayList<String>();
+    listofColors.add("light blue");
+    listofColors.add("light purple");
+    listofColors.add("light green");
+    listofColors.add("light red");
+    listofColors.add("purple");
+    listofColors.add("light yellow");
+    listofColors.add("light orange");
+    listofColors.add("bluish green");
+
+    //setting the scene ✧˖*°࿐
+
+    lightBlue = new Cell(0, 0, "light blue", true,
+        null, null, null, null);
+    lightPurple = new Cell(1, 0, "light purple", false,
+        lightBlue, null, null, null);
+    lightGreen = new Cell(0, 1, "light green", false,
+        null, lightBlue, null, null);
+    lightYellow = new Cell(1, 1, "light yellow", false,
+        lightGreen, lightPurple, null, null);
+    bluishGreen = new Cell(0, 2, "bluish green", false, 
+        null, lightGreen, null, null);
+    Purple = new Cell(1, 2, "purple", false,
+        bluishGreen, lightYellow, null, null);
+    lightOrange = new Cell(0, 3, "light orange", false,
+        null, bluishGreen, null, null);
+    lightRed = new Cell(1, 3, "light red", false,
+        lightOrange, Purple, null, null);
+
+    // ✩‧₊✩‧₊✩‧₊✩‧₊✩‧₊✩‧₊✩‧₊✩‧₊
+
+    lightBlue.right = lightPurple;
+    lightGreen.right = lightYellow;
+    bluishGreen.right = Purple;
+    lightOrange.right = lightRed;
+    lightBlue.bottom = lightGreen;
+    lightPurple.bottom = lightYellow;
+    lightGreen.bottom = bluishGreen;
+    lightYellow.bottom = Purple;
+    bluishGreen.bottom = lightOrange;
+    Purple.bottom = lightRed;
+
+
+    // initColors pretty much ✧˖*°࿐
+
+    ArrayList<Cell> testBoard = new ArrayList<Cell>();
+    testBoard.add(lightBlue);
+    testBoard.add(lightGreen);
+    testBoard.add(bluishGreen);
+    testBoard.add(lightOrange);
+    testBoard.add(lightPurple);
+    testBoard.add(lightYellow);
+    testBoard.add(Purple);
+    testBoard.add(lightRed);
+    //✧˖*°࿐ new worlds for testing
+    flooditWorld = new FloodItWorld();
+    floodItWorld2 = new FloodItWorld();
+
+    flooditWorld.makeCells(FloodItWorld.testBoardSize);
+
+    //✧˖*°࿐ start board of cells
+    exBoard = flooditWorld.board;
+    floodItWorld2.board = new ArrayList<Cell>();
+    //light blue ♡
+    floodItWorld2.board.add(lightBlue);
+    //light green ♡
+    floodItWorld2.board.add(lightGreen);
+    //light purple ♡
+    floodItWorld2.board.add(lightPurple);
+    //light yellow ♡
+    floodItWorld2.board.add(lightYellow);
+  }
+
+  // tests image method
+  //✧˖*°࿐ converting cells to images
+  void testImage(Tester t) {
+    initWorld();
+    //♡
+    t.checkExpect(this.lightBlue.image(), 
+        new RectangleImage(20, 20, OutlineMode.SOLID, new Color(215, 237, 250)));
+    t.checkExpect(this.lightPurple.image(), 
+        new RectangleImage(20, 20, OutlineMode.SOLID, new Color(243, 243, 252)));
+    t.checkExpect(this.lightGreen.image(), 
+        new RectangleImage(20, 20, OutlineMode.SOLID, new Color(217, 244, 224)));
+    t.checkExpect(this.lightYellow.image(), 
+        new RectangleImage(20, 20, OutlineMode.SOLID, new Color(250, 244, 237)));
+    t.checkExpect(this.bluishGreen.image(), 
+        new RectangleImage(20, 20, OutlineMode.SOLID, new Color(230, 252, 252)));
+    t.checkExpect(this.Purple.image(), 
+        new RectangleImage(20, 20, OutlineMode.SOLID, new Color(233, 225, 249)));
+    t.checkExpect(this.lightOrange.image(), 
+        new RectangleImage(20, 20, OutlineMode.SOLID, new Color(246, 223, 218)));
+    t.checkExpect(this.lightRed.image(), 
+        new RectangleImage(20, 20, OutlineMode.SOLID, new Color(232, 208, 215)));
+  }
+
+  // tests initColors method
+  //✧˖*°࿐ does the list contain the valid colors?
+
+  void testInitColors(Tester t) {
+    this.listofColors = null;
+    t.checkExpect(listofColors, null);
+    initWorld();
+    t.checkExpect(listofColors.contains("light blue"), true);
+    t.checkExpect(listofColors.contains("light purple"), true);
+    t.checkExpect(listofColors.contains("light green"), true);
+    t.checkExpect(listofColors.contains("purple"), true);
+    t.checkExpect(listofColors.contains("light red"), true);
+    t.checkExpect(listofColors.contains("light yellow"), true);
+    t.checkExpect(listofColors.contains("light orange"), true);
+    t.checkExpect(listofColors.contains("bluish green"), true);
+  }
+
+  // tests setColor method.
+  // ✧˖*°࿐ are the colors correctly associated w their 
+  // string counterparts?
+  // ✧˖*°࿐is this easily overrided?
+
+  void testSetColor(Tester t) {
+    initWorld();
+    //initial color associations
+    t.checkExpect(lightBlue.color, "light blue");
+    t.checkExpect(lightPurple.color, "light purple");
+    t.checkExpect(lightGreen.color, "light green");
+    //set
+    lightGreen.setColor("light orange");
+    lightBlue.setColor("light purple");
+    lightPurple.setColor("light blue");
+    //changed
+    t.checkExpect(lightBlue.color, "light purple");
+    t.checkExpect(lightPurple.color, "light blue");
+    t.checkExpect(lightGreen.color, "light orange");
+  }
+
+  // tests update method
+  void testUpdate(Tester t) {
+    initWorld();
+    t.checkExpect(lightBlue.right.flooded, false);
+    t.checkExpect(lightBlue.bottom.flooded, false);
+    lightBlue.update("light blue");
+    t.checkExpect(lightBlue.right.flooded, false);
+    t.checkExpect(lightBlue.bottom.flooded, false);
+    lightBlue.color = "light purple";
+    lightBlue.update("light purple");
+    t.checkExpect(lightBlue.right.flooded, true);
+    t.checkExpect(lightBlue.bottom.flooded, false);
+    lightBlue.update("light green");
+    t.checkExpect(lightBlue.right.flooded, true);
+    t.checkExpect(lightBlue.bottom.flooded, true);
+  }
+
+  // tests makeCells method
+  // ✧˖*°࿐ make sure the flood motion isnt all at once
+  // but rather trickles down
+  void testmakeCells(Tester t) {
+    initWorld();
+    // ☆ is first cell flooded? ☆
+    t.checkExpect(exBoard.get(0).flooded, true);
+    // ☆ do the cells have colors and coordinates? ☆
+    for (int i = 0; i < flooditWorld.board.size(); i++) {
+      Cell randcell = flooditWorld.board.get(i);
+      int boardSize = 6; 
+      t.checkRange(randcell.y, 0, boardSize);
+      t.checkRange(randcell.x, 0, boardSize);
+      // ☆ is the color of the cell in the list? ☆
+      t.checkExpect(listofColors.contains(randcell.color), true);
+      if (randcell.x == 0) {
+        t.checkExpect(randcell.left, null);
+      }
+      else { //L ♡
+        t.checkExpect(randcell.left, flooditWorld.board.get(i - boardSize));
+      }
+      if (randcell.x == (boardSize - 1)) {
+        t.checkExpect(randcell.right, null);
+      }
+      else { //R ♡
+        t.checkExpect(randcell.right, flooditWorld.board.get(i + boardSize));
+      }
+      if (randcell.y == 0) {
+        t.checkExpect(randcell.top, null);
+      }
+      else { //T ♡
+        t.checkExpect(randcell.top, flooditWorld.board.get(i - 1));
+      }
+      if (randcell.y == (boardSize - 1)) {
+        t.checkExpect(randcell.bottom, null);
+      }
+      else { //B ♡
+        t.checkExpect(randcell.bottom, flooditWorld.board.get(i + 1));
+      }
+    }
+    // ✧˖*°࿐ ensures all of the other cells arent flooded
+    // when they dont need to be
+    for (int i = 1; i < exBoard.size(); i++) {
+      t.checkExpect(exBoard.get(i).flooded, false);
+    }
+  }
+
+
+  // tests clickedCell method
+  void testclickedCell(Tester t) {
+    initWorld();
+    t.checkExpect(flooditWorld.clickedCell(new Posn(70, 70)), exBoard.get(0));
+    t.checkExpect(flooditWorld.clickedCell(new Posn(140, 140)), exBoard.get(21));
+    t.checkExpect(flooditWorld.clickedCell(new Posn(170, 170)), exBoard.get(28));
+    t.checkExpect(flooditWorld.clickedCell(new Posn(180, 180)), exBoard.get(35));
+  }
+
+  // render. place cell on background and adds
+  // hypothetical endings
+  void testMakeScene(Tester t) {
+    initWorld();
+    WorldScene finalScene = new WorldScene(1200, 800);
+
+    // ✧･ﾟ: *✧･ﾟ rules 
+    finalScene.placeImageXY(new TextImage("Rules:", 20,
+        FontStyle.BOLD, Color.PINK), 800, 255);
+    finalScene.placeImageXY(new TextImage("Starting Point: Top-Left", 15,
+        FontStyle.REGULAR, Color.PINK), 800, 300);
+    finalScene.placeImageXY(new TextImage("1.) Change the color of the cell by clicking", 15,
+        FontStyle.REGULAR, Color.PINK), 800, 350);
+    finalScene.placeImageXY(new TextImage("on one of it's neighbors", 15,
+        FontStyle.REGULAR, Color.PINK), 800, 365);
+    finalScene.placeImageXY(new TextImage("2.) Try to fill the board with one color", 15,
+        FontStyle.REGULAR, Color.PINK), 800, 405);
+    finalScene.placeImageXY(new TextImage("within the given amount of moves", 15,
+        FontStyle.ITALIC, Color.PINK), 800, 420);
+
+    //  ✧･ﾟ: *✧･ﾟ  water png
+
+    finalScene.placeImageXY(new FromFileImage("output-onlinepngtools-3.png"), 820, 150);
+
+    //  ✧･ﾟ: *✧･ﾟ  title "flood it" png
+
+    finalScene.placeImageXY(new FromFileImage("d8ca33e33c53b884f1509626a6393bb7.png"), 820, 150);
+
+    //  ✧･ﾟ: *✧･ﾟ colors 
+
+    finalScene.placeImageXY(lightBlue.image(), 80, 80);
+    finalScene.placeImageXY(lightGreen.image(), 80, 100);
+    finalScene.placeImageXY(lightPurple.image(), 100, 80);
+    finalScene.placeImageXY(lightYellow.image(), 100, 100);
+
+    //  ✧･ﾟ: *✧･ﾟ moves made 
+
+    finalScene.placeImageXY((new TextImage(Integer.toString(floodItWorld2.clicks, 200) 
+        + " /" + Integer.toString(floodItWorld2.limit, 200) , Color.PINK)), 
+        floodItWorld2.boardSize * 13, floodItWorld2.boardSize * 25);
+
+    //  ✧･ﾟ: *✧･ﾟ time count 
+
+    finalScene.placeImageXY(new TextImage("Time: " + floodItWorld2.time / 10 + "s", 20,
+        FontStyle.REGULAR, Color.PINK), floodItWorld2.boardSize * 13, floodItWorld2.boardSize * 27);
+
+
+
+    t.checkExpect(floodItWorld2.makeScene(), finalScene);
+  }
+
+  // tests updateWorldState method
+  void testUpdateWorldState(Tester t) {
+    initWorld();
+    t.checkExpect(floodItWorld2.board.get(0), lightBlue);
+    floodItWorld2.board.get(1).flooded = true;
+    floodItWorld2.board.get(2).flooded = true;
+    floodItWorld2.updateWorldState();
+    t.checkExpect(floodItWorld2.board.get(1).color, "light blue");
+    t.checkExpect(floodItWorld2.board.get(2).color, "light blue");
+  }
+
+  // tests updateOnClick
+  // ✧˖*°࿐ does the board change when the cell is clicked?
+  void testUpdateOnClick(Tester t) {
+    initWorld();
+    floodItWorld2.board = new ArrayList<Cell>();
+    floodItWorld2.board.add(lightBlue);
+    t.checkExpect(floodItWorld2.board.get(0), lightBlue);
+    floodItWorld2.updateOnClick(lightBlue);
+    t.checkExpect(floodItWorld2.board.get(0).color, "light blue");
+  }
+
+  // tests onMouseClick method
+  // ✧˖*°࿐ does change happen when mouse click occurs?
+  void testOnMouseClick(Tester t) {
+    initWorld();
+    floodItWorld2.makeScene();
+    ArrayList<Cell> test = floodItWorld2.board;
+    t.checkExpect(test.get(0), lightBlue);
+    t.checkExpect(floodItWorld2.clicks, 0);
+    floodItWorld2.onMouseClick(new Posn(0, 0));
+    t.checkExpect(test.get(0), lightBlue);
+    t.checkExpect(floodItWorld2.clicks, 0);
+    floodItWorld2.onMouseClick(new Posn(100, 100));
+    t.checkExpect(test.get(0).color, "light yellow");
+    t.checkExpect(floodItWorld2.clicks, 1);
+    floodItWorld2.onMouseClick(new Posn(100, 100));
+    t.checkExpect(floodItWorld2.clicks, 2);
+  }
+
+  // tests on key event
+  // ✧˖*°࿐does the board reset when "r" is pressed?
+  void testOnKeyEvent(Tester t) {
+    initWorld();
+    floodItWorld2.makeCells(FloodItWorld.testBoardSize);
+    ArrayList<Cell> hypothetical = new ArrayList<Cell>();
+    hypothetical = floodItWorld2.board;
+    int testBdSize = FloodItWorld.testBoardSize;
+    t.checkExpect(floodItWorld2.boardSize == 2, true);
+    t.checkExpect(floodItWorld2.colorsUsed == 3, true);
+    t.checkExpect(testBdSize == 6, true);
+    t.checkExpect(floodItWorld2.board.equals(hypothetical), true);
+
+    // "b" will not work to reset
+    // board will remain the same ⋰˚☆
+    floodItWorld2.onKeyEvent("b");
+    t.checkExpect(floodItWorld2.boardSize == 2, true);
+    t.checkExpect(floodItWorld2.colorsUsed == 3, true);
+    t.checkExpect(testBdSize == 6, true);
+    t.checkExpect(floodItWorld2.board.equals(hypothetical), true);
+
+    // "c" will not work to reset
+    // board will remain the same ⋰˚☆
+    floodItWorld2.onKeyEvent("c");
+    t.checkExpect(floodItWorld2.boardSize == 2, true);
+    t.checkExpect(floodItWorld2.colorsUsed == 3, true);
+    t.checkExpect(testBdSize == 6, true);
+    t.checkExpect(floodItWorld2.board.equals(hypothetical), true);
+
+    // "r" will work
+    floodItWorld2.onKeyEvent("r");
+    t.checkExpect(floodItWorld2.boardSize == 2, true);
+    t.checkExpect(floodItWorld2.colorsUsed == 3, true);
+    t.checkExpect(testBdSize == 6, true);
+    t.checkExpect(floodItWorld2.board.equals(hypothetical), false);
+  }
+
+  // tests allFlooded method
+  //  ✧˖*°࿐ are all of the cells flooded?
+  void testAllFlooded(Tester t) {
+    initWorld();
+    t.checkExpect(floodItWorld2.allFlooded(), false);
+    for (Cell c: floodItWorld2.board) {
+      c.flooded = true;
+    }
+    t.checkExpect(floodItWorld2.allFlooded(), true);
+  }
+
+
+  //  ♡ ·˚ ♡♡ ·˚ ♡♡ ·˚ ♡♡ ·˚ ♡ RUN GAME ♡ ·˚ ♡♡ ·˚ ♡♡ ·˚ ♡♡ ·˚ ♡
+
+  void testGame(Tester t) {
+    FloodItWorld w = new FloodItWorld(20, 6);
+    t.checkException(
+        new IllegalArgumentException("✧You may not use more than 8 colors!✧"),
+        w, "startGame", 20, 9);
+    // ↓ change grid size and num of colors here ↓
+    w.startGame(20, 6);
+    t.checkExpect(w.boardSize, 20);
+    t.checkExpect(w.colorsUsed, 6);
+    t.checkExpect(w.clicks, 0);
+    t.checkExpect(w.limit, 46);
+  }
+}
